@@ -156,14 +156,68 @@ function cerrarFactura(){
   window.mostrarFactura = mostrarFactura;
   window.cerrarFactura = cerrarFactura;
   
-  /* ----------------- DESCARGAR FACTURA ----------------- */
+/* ----------------- DESCARGAR FACTURA (CON DISEÑO) ----------------- */
 function descargarFactura() {
   const contenido = document.getElementById("facturaContenido").innerHTML;
-  const encabezado = `
-    <h2>EcoSmartParking - Factura Digital</h2>
-    <hr>
+
+  const htmlCompleto = `
+  <!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura EcoSmartParking</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        text-align: center;
+        color: #333;
+      }
+      .logo {
+        width: 120px;
+        margin-bottom: 10px;
+      }
+      .contenedor {
+        max-width: 400px;
+        margin: 0 auto;
+        border: 1px solid #ccc;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      h2 {
+        font-size: 1.4em;
+        margin-bottom: 8px;
+      }
+      p {
+        font-size: 1em;
+        margin: 6px 0;
+      }
+      hr {
+        margin: 10px 0;
+        border: none;
+        border-top: 1px solid #ccc;
+      }
+      .gracias {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 1.1em;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="logoEcoSmartParking.png" alt="EcoSmartParking Logo" class="logo">
+    <div class="contenedor">
+      <h2>Factura Digital</h2>
+      <hr>
+      ${contenido}
+      <hr>
+      <p class="gracias">¡Gracias por confiar en nosotros!</p>
+    </div>
+  </body>
+  </html>
   `;
-  const htmlCompleto = encabezado + contenido;
 
   const blob = new Blob([htmlCompleto], { type: "text/html" });
   const link = document.createElement("a");
@@ -248,7 +302,8 @@ window.descargarFactura = descargarFactura;
       <p class="text-gray-600 mb-4">Factura Digital</p>
       <div id="facturaContenido" class="text-left text-gray-700 text-sm mb-4"></div>
       <p class="text-green-700 font-semibold text-center">¡Gracias por confiar en nosotros!</p>
-         <!-- 🔽 NUEVO BOTÓN PARA DESCARGAR FACTURA -->
+       
+      <!-- 🔽 NUEVO BOTÓN PARA DESCARGAR FACTURA -->
     <button onclick="descargarFactura()" class="mt-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
       Descargar factura
     </button>
@@ -257,6 +312,7 @@ window.descargarFactura = descargarFactura;
 </body>
 
 </html>
+
 
 
 
