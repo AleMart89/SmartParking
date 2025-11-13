@@ -155,6 +155,24 @@ function cerrarFactura(){
 }
   window.mostrarFactura = mostrarFactura;
   window.cerrarFactura = cerrarFactura;
+  
+  /* ----------------- DESCARGAR FACTURA ----------------- */
+function descargarFactura() {
+  const contenido = document.getElementById("facturaContenido").innerHTML;
+  const encabezado = `
+    <h2>EcoSmartParking - Factura Digital</h2>
+    <hr>
+  `;
+  const htmlCompleto = encabezado + contenido;
+
+  const blob = new Blob([htmlCompleto], { type: "text/html" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `Factura_${ticketId}.html`;
+  link.click();
+}
+
+window.descargarFactura = descargarFactura;
 </script>
 </head>
 
@@ -239,6 +257,7 @@ function cerrarFactura(){
 </body>
 
 </html>
+
 
 
 
