@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel de Control - EcoSmartParking</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+<style>
+body { font-family: 'Inter', sans-serif; }
+video {
+    width: 100%;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+}
+</style>
+</head>
+
+<body class="bg-lime-100 p-4 text-gray-900">
+  <!-- Encabezado -->
+  <header class="w-full text-center py-6 bg-white shadow-md border-b border-lime-300 mb-6">
+    <img src="logoEcoSmartParking.png" alt="EcoSmartParking Logo" class="mx-auto w-64 mb-2">
+    <h1 class="text-3xl font-bold text-green-700">EcoSmartParking</h1>
+  </header>
+
+  <h1 class="text-3xl font-bold text-center mb-6 text-green-800">Panel de Control - Estacionamiento</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Entrada -->
+      <div class="bg-yellow-50 border border-lime-300 p-6 rounded-xl shadow-md">
+          <h2 class="text-xl font-semibold mb-3 text-green-700">Escanear ENTRADA</h2>
+          <video id="cameraEntrada"></video>
+          <button id="btnScanEntrada" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-bold">
+              Activar Cámara Entrada
+          </button>
+      </div>
+
+      <!-- Salida -->
+      <div class="bg-yellow-50 border border-lime-300 p-6 rounded-xl shadow-md">
+          <h2 class="text-xl font-semibold mb-3 text-yellow-700">Escanear SALIDA</h2>
+          <video id="cameraSalida"></video>
+          <button id="btnScanSalida" class="mt-4 w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-lg font-bold">
+              Activar Cámara Salida
+          </button>
+      </div>
+  </div>
+
+  <!-- Tickets en curso -->
+  <div class="bg-yellow-50 border border-lime-300 p-6 rounded-xl shadow-md mt-6">
+  <h2 class="text-xl font-semibold mb-3 text-green-700">Tickets Activos</h2>
+  <table class="w-full text-left">
+  <thead>
+  <tr class="border-b border-lime-400">
+  <th class="py-1">ID</th>
+  <th class="py-1">Estado</th>
+  <th class="py-1">Entrada</th>
+  <th class="py-1 text-center">Acción</th>
+  </tr>
+  </thead>
+  <tbody id="ticketList"></tbody>
+  </table>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getFirestore, doc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCOwKGDxFFltqhS8r9oKnLH2nKCvAFAddU",
+  authDomain: "ecosmartparking-f637a.firebaseapp.com",
+  projectId: "ecosmartparking-f637a",
+  storageBucket: "ecosmartparking-f637a.firebasestorage.app",
+  messagingSenderId: "659680232018",
+  appId: "1:659680232018:web:2ecc9a36040d4cdd47958b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+function activateScanner(videoElement, onScan) {
+    const codeReader = new ZXingBrowser.BrowserQRCodeReader();
+    codeReader.decodeFromVideoDevice(undefined, videoElement, (result, err) => {
+        if (result) {
+            onScan(result.text);
+            codeReader.reset();
+        }
+    });
+}
+
+document.getElementById("btnScanEntrada").onclick = () => {
+    activateScanner(document.getElementById("cameraEntrada"), async (ticketId) => {
+        await updateDoc(doc(db, "parkingTickets", ticketId), {
+            status: "active",
+            entryTime: new Date()
+        });
+        alert("✅ Entrada registrada");
+    });
+};
+
+document.getElementById("btnScanSalida").onclick = () => {
+    activateScanner(document.getElementById("cameraSalida"), async (ticketId) => {
+        const ref = doc(db, "parkingTickets", ticketId);
+        const exitTime = new Date();
+
+        // Traer los datos de entrada para calcular costo
+        const { getDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+        const snapshot = await getDoc(ref);
+
+        if (snapshot.exists()) {
+            const data = snapshot.data();
+            if (data.entryTime) {
+                const diffMin = Math.floor((exitTime - data.entryTime.toDate()) / 60000);
+                const cost = Math.max(diffMin * 0.03, 0.03);
+                await updateDoc(ref, { status: "exited", exitTime, cost });
+            } else {
+                await updateDoc(ref, { status: "exited", exitTime });
+            }
+        } else {
+            await updateDoc(ref, { status: "exited", exitTime });
+        }
+
+        alert("✅ Salida confirmada");
+    });
+};
+
+// Eliminar ticket manualmente
+async function deleteTicket(id) {
+  const confirmDelete = confirm("¿Seguro que deseas eliminar este ticket?");
+  if (confirmDelete) {
+    await deleteDoc(doc(db, "parkingTickets", id));
+    alert("🗑️ Ticket eliminado correctamente");
+  }
+}
+
+// Mostrar tickets activos
+onSnapshot(collection(db, "parkingTickets"), (snapshot) => {
+    const table = document.getElementById("ticketList");
+    table.innerHTML = "";
+    snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        if (d.status !== "exited") {
+            table.innerHTML += `
+            <tr class="border-b border-lime-300">
+              <td class="py-1">${docSnap.id}</td>
+              <td class="py-1">${d.status}</td>
+              <td class="py-1">${d.entryTime ? d.entryTime.toDate().toLocaleTimeString() : "-"}</td>
+              <td class="py-1 text-center">
+                <button onclick="deleteTicket('${docSnap.id}')"
+                  class="bg-red-500 hover:bg-red-600 text-white text-sm px-3 py-1 rounded">
+                  Eliminar
+                </button>
+              </td>
+            </tr>`;
+        }
+    });
+});
+
+// Hacer la función visible globalmente
+window.deleteTicket = deleteTicket;
+</script>
+</body>
+</html>
