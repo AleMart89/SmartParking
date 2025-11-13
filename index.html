@@ -156,7 +156,7 @@ function cerrarFactura(){
   window.mostrarFactura = mostrarFactura;
   window.cerrarFactura = cerrarFactura;
   
-/* ----------------- DESCARGAR FACTURA (CON DISEÑO) ----------------- */
+/* ----------------- DESCARGAR FACTURA ----------------- */
 function descargarFactura() {
   const contenido = document.getElementById("facturaContenido").innerHTML;
 
@@ -174,10 +174,6 @@ function descargarFactura() {
         padding: 0;
         text-align: center;
         color: #333;
-      }
-      .logo {
-        width: 120px;
-        margin-bottom: 10px;
       }
       .contenedor {
         max-width: 400px;
@@ -207,7 +203,6 @@ function descargarFactura() {
     </style>
   </head>
   <body>
-    <img src="logoEcoSmartParking.png" alt="EcoSmartParking Logo" class="logo">
     <div class="contenedor">
       <h2>Factura Digital</h2>
       <hr>
@@ -221,8 +216,9 @@ function descargarFactura() {
 
   const blob = new Blob([htmlCompleto], { type: "text/html" });
   const link = document.createElement("a");
+  const fecha = new Date().toISOString().slice(0, 10);
   link.href = URL.createObjectURL(blob);
-  link.download = `Factura_${ticketId}.html`;
+  link.download = `Factura_${ticketId}_${fecha}.html`;
   link.click();
 }
 
@@ -312,6 +308,7 @@ window.descargarFactura = descargarFactura;
 </body>
 
 </html>
+
 
 
 
